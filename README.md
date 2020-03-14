@@ -9,11 +9,8 @@ Projeto Final da Disciplina de Circuitos Lógicos II, ministrada pelo Professor 
 
 <p align="center">
   <a>Criado por</a>
-  <a href="https://github.com/diegolrs">Diego Reis</a>
-  <a >, </a>
-  <a href="https://github.com/yasminmedeiros00">Yasmin Medeiros</a>
-  <a >, </a>
-  <a href="https://github.com/RaissaVieira">Raissa Vieira</a>
-  <a > e </a>
-  <a href="https://github.com/MtHonorio">Matheus Honório</a>
+  <a href="https://github.com/diegolrs">Diego Reis</a>, 
+  <a href="https://github.com/yasminmedeiros00">Yasmin Medeiros</a>,
+  <a href="https://github.com/RaissaVieira">Raissa Vieira</a> e
+  <a href="https://github.com/MtHonorio">Matheus Honório</a>.
 </p>
