@@ -1,7 +1,7 @@
 module fsm(clock, botao, led0, led1, led2, led3);
 
 input clock, botao;
-input led0, led1, led2, led3;
+output led0, led1, led2, led3;
 
 reg estadoLed0, estadoLed1, estadoLed2, estadoLed3;
 reg [1:0] estado;
