@@ -1,13 +1,13 @@
 module LCD_Display(iCLK_50MHZ, iRST_N, hex1, hex0, 
-    LCD_RS,LCD_E,LCD_RW,DATA_BUS,b1, b2, b5, bOK, chave,led);
+    LCD_RS,LCD_E,LCD_RW,DATA_BUS,botao, led0, led1, led2, led3,botao0,botao1,botao2, chave4);
 input iCLK_50MHZ, iRST_N;
 input [3:0] hex1, hex0;
 output LCD_RS, LCD_E, LCD_RW;
 inout [7:0] DATA_BUS;
-input b1, b2, b5, bOK;
-input [3:0]chave;
-output led;
-
+input botao;
+output led0,led1, led2, led3;
+input botao0,botao1,botao2;
+input [0:3]chave4;//Escolher produto
 
 parameter
 HOLD = 4'h0,
@@ -40,11 +40,16 @@ Maquina u1(
 .out(Next_Char),
 .hex1(hex1),
 .hex0(hex0),
-.b1(b1),
-.b2(b2),
-.bOK(bOK),
-.chave(chave),
-.clock(iCLK_50MHZ)
+.botao(botao),
+.led0(led0),
+.led1(led1),
+.led2(led2),
+.led3(led3),
+.clock(iCLK_50MHZ),
+.botao0(botao0),
+.botao1(botao1),
+.botao2(botao2),
+.chave4(chave4)
 );
 
 assign LCD_RW = LCD_RW_INT;
@@ -228,41 +233,42 @@ always @(posedge CLK_400HZ or negedge iRST_N)
     endcase
 endmodule
 
-module Maquina(index,out,hex0,hex1,b1, b2, b5, bOK, chave, clock);
-
+module Maquina(index,out,hex0,hex1,clock, botao0,botao1,botao2,chave4, led0, led1, led2, led3,botao);
 input [4:0] index;
 input [3:0] hex0,hex1;
 output [7:0] out;
 reg [7:0] out;
-input b1, b2, b5, bOK;
-input [3:0]chave;
-input clock;
-integer soma, totalAPagar;
-reg[1:0] estado_atual, estado_anterior;
-parameter S0=0, S1=1, S2=2, S3=3;
-// ASCII hex values for LCD Display
-// Enter Live Hex Data Values from hardware here
-// LCD DISPLAYS THE FOLLOWING:
-//----------------------------
-//| Count=XX                  |
-//| DE2                       |
-//----------------------------
-// Line 1
-reg[31:0] contador; // REGISTRA 32 DIGITOS
-     
-initial 
-begin
-	soma = 0;
-	totalAPagar = 0;
-	contador <= 32'b0;// ZERA O CONTADOR
+input clock, botao;
+input botao0,botao1,botao2; //Receber o dinheiro
+input [0:3]chave4;//Escolher produto
+output led0, led1, led2, led3;
+reg [3:0] soma, totalAPagar,troco;
+reg estadoLed0, estadoLed1, estadoLed2, estadoLed3;
+reg [1:0] estado;
+reg[31:0] contador, contador1; // REGISTRA 32 DIGITOS
+wire chave0,chave1,chave2,chave3;
+
+initial begin
+contador <= 32'b0;// ZERA O CONTADOR
+contador1 <= 32'b0;// ZERA O CONTADOR
+soma <= 0;// ZERA O CONTADOR
+totalAPagar <= 0;// ZERA O CONTADOR
+troco <= 0;
 end
 
- always @(*) begin
-		case(estado_atual)
-			S0:
+parameter zero=0, um=1, dois=2, tres=3;
+
+always @(posedge clock) 
+begin
+	case (estado)
+		zero:
 			begin
-				//LCD: Digite um valor
-						case (index)
+			estadoLed0 <= 1'b1;
+			estadoLed1 <= 1'b0;
+			estadoLed2 <= 1'b0;
+			estadoLed3 <= 1'b0;
+			
+			case (index)
 								5'h00: out <= 8'h53; //s
 								5'h01: out <= 8'h65; //e
 								5'h02: out <= 8'h6C; //l
@@ -286,24 +292,105 @@ end
 								5'h13: out <= 8'h6F; //o
 								5'h14: out <= 8'h72; //r
 								default: out <= 8'h20;
-						endcase
-						
-				if(~b1)
-				begin
-					soma = soma + 1;
-				end
-				if(~b2)
-				begin
-					soma = soma + 2;
-				end
-				if(~b5)
-				begin
-					soma = soma + 5;
-				end
-			end
-			S1:
+			endcase
+			if(~botao0 || ~botao1 || ~botao2)
 			begin
-					case (index)
+			contador1 <= contador1 + 1'b1; // SOMA UM AO CONTADOR
+			end
+			
+			if(contador1 > 15000000) // SE O CONTADOR = MÁXIMO
+			begin
+				if(~botao0)
+				begin
+				soma <= soma + 4'b0001; // SOMA UM 
+				end
+				if(~botao1)
+				begin
+				soma <= soma + 4'b0010; // SOMA UM 
+				end
+				if(~botao2)
+				begin
+				soma <= soma + 4'b0101;
+				end
+				contador1 <= 0; // ZERA CONTADOR
+			end
+			
+			case (soma)
+			4'b0000:
+			begin
+			case (index)
+				5'h15: out <= 8'h20; //espaco
+				5'h16: out <= 8'h30;
+			endcase
+			end //espaco
+			4'b0001:
+			begin
+			case (index)
+				5'h15: out <= 8'h20; //espaco
+				5'h16: out <= 8'h31;
+			endcase
+			end //espaco
+			4'b0010:
+			begin
+			case (index)
+				5'h15: out <= 8'h20; //espaco
+				5'h16: out <= 8'h32; //espaco
+			endcase
+			end
+			4'b0011:
+			begin
+			case (index)
+				5'h15: out <= 8'h20; //espaco
+				5'h16: out <= 8'h33; //espaco
+			endcase
+			end
+			4'b0100:
+			begin
+			case (index)
+				5'h15: out <= 8'h20; //espaco
+				5'h16: out <= 8'h34; //espaco
+			endcase
+			end
+			4'b0101:
+			begin
+			case (index)
+				5'h15: out <= 8'h20;//espaco
+				5'h16: out <= 8'h35; //espac
+			endcase
+			end
+			4'b0110:
+			begin
+			case (index)
+				5'h15: out <= 8'h20; //espaco
+				5'h16: out <= 8'h36; //espaco
+			endcase
+			end
+			4'b0111:
+			begin
+			case (index)
+				5'h15: out <= 8'h20; //espaco
+				5'h16: out <= 8'h37; //espaco
+			endcase
+			end
+			4'b1000:
+			begin
+			case (index)
+				5'h15: out <= 8'h20; //espaco
+				5'h16: out <= 8'h38; //espaco
+			endcase
+			end
+			endcase
+			
+			
+	end
+		um:
+			begin
+			estadoLed0 <= 1'b0;
+			estadoLed1 <= 1'b1;
+			estadoLed2 <= 1'b0;
+			estadoLed3 <= 1'b0; 
+			
+			case (index)
 							5'h00: out <= 8'h53; //s
 							5'h01: out <= 8'h65; //e
 							5'h02: out <= 8'h6C; //l
@@ -325,48 +412,50 @@ end
 							5'h18: out <= 8'h6F; //o
 							5'h19: out <= 8'h3A; //:
 							default: out <= 8'h20;
-						endcase
-						
-				case(chave)
+			endcase
+			case(chave4)
 					4'b0000:
-						totalAPagar = 0;
+						totalAPagar = 4'b0000;
 					4'b0001:
-						totalAPagar = 2;
+						totalAPagar = 4'b0010;
 					4'b0010:
-						totalAPagar = 2;
+						totalAPagar = 4'b0010;
 					4'b0011:
-						totalAPagar = 4;
+						totalAPagar = 4'b0100;
 					4'b0100:
-						totalAPagar = 2;
+						totalAPagar = 4'b0010;
 					4'b0101:
-						totalAPagar = 4;
+						totalAPagar = 4'b0100;
 					4'b0110:
-						totalAPagar = 4;
+						totalAPagar = 4'b0100;
 					4'b0111:
-						totalAPagar = 6;
+						totalAPagar = 4'b0110;
 					4'b1000:
-						totalAPagar = 2;
+						totalAPagar = 4'b0010;
 					4'b1001:
-						totalAPagar = 4;
+						totalAPagar = 4'b0100;
 					4'b1010:
-						totalAPagar = 4;
+						totalAPagar = 4'b0100;
 					4'b1011:
-						totalAPagar = 6;
+						totalAPagar = 4'b0110;
 					4'b1100:
-						totalAPagar = 4;
+						totalAPagar = 4'b0100;
 					4'b1101:
-						totalAPagar = 6;
+						totalAPagar = 4'b0110;
 					4'b1110:
-						totalAPagar = 6;
+						totalAPagar = 4'b0110;
 					4'b1111:
-						totalAPagar = 8;
+						totalAPagar = 4'b1000;
 				endcase
 			end
-			S2:
+		dois:
 			begin
-				//LCD: Produto saindo
-				//     Troco = $
-								case (index)     		
+			estadoLed0 <= 1'b0;
+			estadoLed1 <= 1'b0;
+			estadoLed2 <= 1'b1;
+			estadoLed3 <= 1'b0;
+			
+			case (index)     		
 								5'h00: out <= 8'h70; //p
 								5'h01: out <= 8'h72; //r
 								5'h02: out <= 8'h6F; //o
@@ -391,14 +480,76 @@ end
 								5'h16: out <= 8'h3D; //=
 								5'h17: out <= 8'h20; //espaco
 								default: out <= 8'h20;
-								endcase
-						//
-						
+								
+								
+			endcase
+			troco = totalAPagar - soma;
+			case (troco)
+				4'b0000:
+				begin
+				case (index)
+					5'h18: out <= 8'h30;
+				endcase
+				end //espaco
+				4'b0001:
+				begin
+				case (index)
+					5'h18: out <= 8'h31;
+				endcase
+				end //espaco
+				4'b0010:
+				begin
+				case (index)
+					5'h18: out <= 8'h32; //espaco
+				endcase
+				end
+				4'b0011:
+				begin
+				case (index)
+					5'h18: out <= 8'h33; //espaco
+				endcase
+				end
+				4'b0100:
+				begin
+				case (index)
+					5'h18: out <= 8'h34; //espaco
+				endcase
+				end
+				4'b0101:
+				begin
+				case (index)
+					5'h18: out <= 8'h35; //espac
+				endcase
+				end
+				4'b0110:
+				begin
+				case (index)
+					5'h18: out <= 8'h36; //espaco
+				endcase
+				end
+				4'b0111:
+				begin
+				case (index)
+					5'h18: out <= 8'h37; //espaco
+				endcase
+				end
+				4'b1000:
+				begin
+				case (index)
+					5'h18: out <= 8'h38; //espaco
+				endcase
+				end
+			endcase
+
 			end
-			S3:
+		tres:
 			begin
-					//LCD: Tenta Novamente
-							case (index)
+			estadoLed0 <= 1'b0;
+			estadoLed1 <= 1'b0;
+			estadoLed2 <= 1'b0;
+			estadoLed3 <= 1'b1;
+			
+			case (index)
 								5'h00: out <= 8'h74; //t
 								5'h01: out <= 8'h65; //e
 								5'h02: out <= 8'h6E; //n
@@ -417,56 +568,49 @@ end
 								5'h17: out <= 8'h74; //t
 								5'h18: out <= 8'h65; //e
 								default: out <= 8'h20;
-							endcase
-						
-					//
-				end
-		endcase
+			endcase
+			end
+		default:
+			begin
+			estadoLed0 <= 1'b0;
+			estadoLed1 <= 1'b0;
+			estadoLed2 <= 1'b0;
+			estadoLed3 <= 1'b0;
+			end
+	endcase
 end
 
-always @(posedge clock) begin
-		case(estado_atual)
-		S0:
-		begin
-			if(~bOK)
-			begin
-				estado_atual<=S1;
-				estado_anterior<=S0; 
-			end
-		end
-		S1:
-		begin
-			if(~bOK)
-			begin 
-				if(soma >= totalAPagar)
-				begin
-					estado_atual<=S2;
-					estado_anterior<=S1;
-				end
-				else
-				begin 
-					estado_atual<=S3;
-					estado_anterior<=S1;
-				end
-			end
-		end
-		S2:
-		begin
-			if(~bOK)
-			begin
-				estado_atual<=S0;
-				estado_anterior<=S2;
-			end
-		end
-		S3:
-		begin
-			if(~bOK)
-			begin
-				estado_atual<=S0;
-				estado_anterior<=S3;
-			end
-		end
-		endcase
+always @(posedge clock) // SEMPRE NO PULSO DO CLOCK
+begin
+	if(~botao)
+	begin
+	contador <= contador + 1'b1; // SOMA UM AO CONTADOR
 	end
+	
+	if(contador > 15000000) // SE O CONTADOR = M�XIMO
+	begin
+		case (estado)
+			zero:
+				 estado = um;
+			um:
+				 if(soma >= totalAPagar && totalAPagar>0)
+					estado = dois;
+				 else
+					estado = tres;
+			dois:
+				estado = zero;
+			tres:
+				estado = zero;
+        endcase
+		contador <= 0; // ZERA CONTADOR
+	end
+end
+
+assign led0 = estadoLed0; // LED � ASSOCIADO AO ESTADO
+assign led1 = estadoLed1; // LED � ASSOCIADO AO ESTADO
+assign led2 = estadoLed2; // LED � ASSOCIADO AO ESTADO
+assign led3 = estadoLed3; // LED � ASSOCIADO AO ESTADO
 
 endmodule
+
+
